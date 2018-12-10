@@ -1,0 +1,94 @@
+options {
+    static = false;
+}
+
+PARSER_BEGIN(Calculator)
+
+package pers.zyc.calc;
+
+import java.io.StringReader;
+
+public class Calculator {
+
+	public static double calc(String expression) {
+		try {
+			return new Calculator(expression).calc();
+		} catch (Throwable e) {
+			throw new CalcException(e);
+		}
+	}
+
+	private Calculator(String expression) {
+		this(new StringReader(expression));
+	}
+}
+
+PARSER_END(Calculator)
+
+SKIP: {" " | "\r" | "\t" | "\n" | "\r\n"}
+
+TOKEN: {
+	<PLUS: "+"> |
+	<MINUS: "-"> |
+	<MULTI: "*"> |
+	<DIVIDE: "/"> |
+	<NUMBER: <DIGITS> | <DIGITS> "." <DIGITS>> |
+	<#DIGITS: (["0"-"9"])+> |
+	<LEFT_PAR: "("> |
+	<RIGHT_PAR: ")">
+}
+
+double calc(): {double i; double v;} {
+    v = term()
+    (
+        <PLUS>
+        i = term()
+        {
+            v += i;
+        }
+        |
+        <MINUS>
+        i = term()
+        {
+            v -= i;
+        }
+    )*
+    {
+        return v;
+    }
+}
+
+double term(): {double i; double v;} {
+	v = primary()
+	(
+		<MULTI>
+		i = primary()
+		{
+			v *= i;
+		}
+		|
+		<DIVIDE>
+		i = primary()
+		{
+		    v /= i;
+		}
+	)*
+	{
+	    return v;
+	}
+}
+
+double primary(): {Token t; double d;} {
+	t = <NUMBER>
+	{
+		return Double.parseDouble(t.image);
+	}
+	|
+	<LEFT_PAR> d = calc() <RIGHT_PAR>
+	{
+	    return d;
+	}
+}
+
+
+
